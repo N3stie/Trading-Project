@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TRADING PROJECT</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <!-- Chart.js for P&L chart -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body class="dark">
+    
+    <!-- ========== SIDEBAR ========== -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <h2>📊 TRADING PROJECT</h2>
+        </div>
+        
+        <nav class="sidebar-nav">
+            <ul>
+                <li>
+                    <button class="nav-btn active" data-page="dashboard">
+                        <span class="nav-icon">📈</span> Dashboard
+                    </button>
+                </li>
+                <li>
+                    <button class="nav-btn" data-page="trades">
+                        <span class="nav-icon">📋</span> Trade History
+                    </button>
+                </li>
+                <li>
+                    <button class="nav-btn" data-page="addTrade">
+                        <span class="nav-icon">➕</span> Add Trade
+                    </button>
+                </li>
+                <li>
+                    <button class="nav-btn" data-page="analytics">
+                        <span class="nav-icon">📊</span> Analytics
+                    </button>
+                </li>
+                <li>
+                    <button class="nav-btn" data-page="settings">
+                        <span class="nav-icon">⚙️</span> Settings
+                    </button>
+                </li>
+            </ul>
+        </nav>
+        
+        <div class="sidebar-footer">
+            <p>TRADING PROJECT v1.0</p>
+        </div>
+    </aside>
+    
+    <!-- ========== MAIN CONTENT ========== -->
+    <main class="main-content">
+        
+        <!-- ===== DASHBOARD PAGE ===== -->
+        <section id="dashboard" class="page active">
+            <div class="page-header">
+                <h1>Dashboard</h1>
+                
+                <!-- Session Filter -->
+                <div class="filter-bar">
+                    <select id="dashboardSessionFilter">
+                        <option value="all">All Sessions</option>
+                    </select>
+                    
+                    <input type="date" id="dashboardDateFrom" placeholder="From">
+                    <input type="date" id="dashboardDateTo" placeholder="To">
+                    
+                    <select id="dashboardInstrumentFilter">
+                        <option value="all">All Instruments</option>
+                        <option value="Stocks">Stocks</option>
+                        <option value="Forex">Forex</option>
+                        <option value="Crypto">Crypto</option>
+                        <option value="Indices">Indices</option>
+                        <option value="Commodities">Commodities</option>
+                    </select>
+                    
+                    <select id="dashboardAccountFilter">
+                        <option value="all">All Accounts</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- Summary Cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <span class="stat-label">Total P&L</span>
+                    <span class="stat-value" id="totalPnL">$0.00</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Total Wins</span>
+                    <span class="stat-value win" id="totalWins">0</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Total Losses</span>
+                    <span class="stat-value loss" id="totalLosses">0</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Win Rate</span>
+                    <span class="stat-value" id="winRate">0%</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Profit Factor</span>
+                    <span class="stat-value" id="profitFactor">0.00</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Total Trades</span>
+                    <span class="stat-value" id="totalTrades">0</span>
+                </div>
+            </div>
+            
+            <!-- Biggest / Average Win Loss -->
+            <div class="stats-grid stats-grid-small">
+                <div class="stat-card">
+                    <span class="stat-label">🏆 Biggest Win</span>
+                    <span class="stat-value win" id="biggestWin">$0.00</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">💀 Biggest Loss</span>
+                    <span class="stat-value loss" id="biggestLoss">$0.00</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">📊 Avg Win</span>
+                    <span class="stat-value win" id="avgWin">$0.00</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">📉 Avg Loss</span>
+                    <span class="stat-value loss" id="avgLoss">$0.00</span>
+                </div>
+            </div>
+            
+            <!-- P&L Chart -->
+            <div class="chart-container">
+                <h3>P&L History</h3>
+                <canvas id="pnlChart"></canvas>
+            </div>
+        </section>
+        
+        <!-- ===== TRADE HISTORY PAGE ===== -->
+        <section id="trades" class="page">
+            <div class="page-header">
+                <h1>Trade History</h1>
+                
+                <div class="filter-bar">
+                    <select id="tradesSessionFilter">
+                        <option value="all">All Sessions</option>
+                    </select>
+                    
+                    <input type="date" id="tradesDateFrom">
+                    <input type="date" id="tradesDateTo">
+                    
+                    <select id="tradesInstrumentFilter">
+                        <option value="all">All Instruments</option>
+                        <option value="Stocks">Stocks</option>
+                        <option value="Forex">Forex</option>
+                        <option value="Crypto">Crypto</option>
+                        <option value="Indices">Indices</option>
+                        <option value="Commodities">Commodities</option>
+                    </select>
+                    
+                    <select id="tradesAccountFilter">
+                        <option value="all">All Accounts</option>
+                    </select>
+                    
+                    <select id="tradesTypeFilter">
+                        <option value="all">All Types</option>
+                        <option value="Buy">Buy</option>
+                        <option value="Sell">Sell</option>
+                    </select>
+                    
+                    <input type="text" id="tradesSearch" placeholder="Search symbol...">
+                </div>
+            </div>
+            
+            <!-- Trades Table -->
+            <div class="table-container">
+                <table id="tradesTable">
+                    <thead>
+                        <tr>
+                            <th>Entry Date</th>
+                            <th>Exit Date</th>
+                            <th>Instrument</th>
+                            <th>Category</th>
+                            <th>Size</th>
+                            <th>Entry Price</th>
+                            <th>Exit Price</th>
+                            <th>Profit</th>
+                            <th>Type</th>
+                            <th>MFE</th>
+                            <th>MAE</th>
+                            <th>Session</th>
+                            <th>Account</th>
+                            <th>Note</th>
+                            <th>Screenshot</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tradesTableBody">
+                        <tr class="empty-row">
+                            <td colspan="16">No trades found</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        
+        <!-- ===== ADD TRADE PAGE ===== -->
+        <section id="addTrade" class="page">
+            <div class="page-header">
+                <h1>Add Trade</h1>
+            </div>
+            
+            <form id="addTradeForm" class="trade-form">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="entryDate">Entry Date & Time</label>
+                        <input type="datetime-local" id="entryDate" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="exitDate">Exit Date & Time</label>
+                        <input type="datetime-local" id="exitDate" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="instrument">Instrument</label>
+                        <input type="text" id="instrument" placeholder="e.g., AAPL, EUR/USD" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="category">Category</label>
+                        <select id="category" required>
+                            <option value="">Select...</option>
+                            <option value="Stocks">Stocks</option>
+                            <option value="Forex">Forex</option>
+                            <option value="Crypto">Crypto</option>
+                            <option value="Indices">Indices</option>
+                            <option value="Commodities">Commodities</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="size">Max Size</label>
+                        <input type="number" id="size" placeholder="Quantity" step="any" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="entryPrice">Entry Price</label>
+                        <input type="number" id="entryPrice" placeholder="$0.00" step="any" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="exitPrice">Exit Price</label>
+                        <input type="number" id="exitPrice" placeholder="$0.00" step="any" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="type">Type</label>
+                        <select id="type" required>
+                            <option value="Buy">Buy</option>
+                            <option value="Sell">Sell</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="mfe">MFE (Max Favorable Excursion)</label>
+                        <input type="number" id="mfe" placeholder="Ticks/Points" step="any">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="mae">MAE (Max Adverse Excursion)</label>
+                        <input type="number" id="mae" placeholder="Ticks/Points" step="any">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="session">Session</label>
+                        <select id="session" required>
+                            <option value="">Select...</option>
+                            <option value="Asia">Asia Session</option>
+                            <option value="London">London Session</option>
+                            <option value="New York">New York Session</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="account">Account</label>
+                        <select id="account" required>
+                            <option value="">Select...</option>
+                            <option value="">Prop Account</option>s
+                            <option value="">Personal Account</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group full-width">
+                        <label for="note">Note / Description</label>
+                        <textarea id="note" rows="4" placeholder="Trade notes, strategy, mistakes..."></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="screenshot">Chart Screenshot</label>
+                        <input type="file" id="screenshot" accept="image/*">
+                        <div id="screenshotPreview" class="screenshot-preview"></div>
+                    </div>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Add Trade</button>
+                    <button type="reset" class="btn btn-secondary">Clear Form</button>
+                </div>
+            </form>
+        </section>
+        
+        <!-- ===== ANALYTICS PAGE ===== -->
+        <section id="analytics" class="page">
+            <div class="page-header">
+                <h1>Analytics</h1>
+                
+                <div class="filter-bar">
+                    <select id="analyticsSessionFilter">
+                        <option value="all">All Sessions</option>
+                    </select>
+                    
+                    <input type="date" id="analyticsDateFrom">
+                    <input type="date" id="analyticsDateTo">
+                    
+                    <select id="analyticsInstrumentFilter">
+                        <option value="all">All Instruments</option>
+                        <option value="Stocks">Stocks</option>
+                        <option value="Forex">Forex</option>
+                        <option value="Crypto">Crypto</option>
+                        <option value="Indices">Indices</option>
+                        <option value="Commodities">Commodities</option>
+                    </select>
+                    
+                    <select id="analyticsAccountFilter">
+                        <option value="all">All Accounts</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="analytics-grid">
+                <!-- Win Rate by Session -->
+                <div class="chart-container">
+                    <h3>Win Rate by Session</h3>
+                    <canvas id="winRateBySessionChart"></canvas>
+                </div>
+                
+                <!-- P&L by Instrument Category -->
+                <div class="chart-container">
+                    <h3>P&L by Instrument Category</h3>
+                    <canvas id="pnlByCategoryChart"></canvas>
+                </div>
+                
+                <!-- P&L by Account -->
+                <div class="chart-container">
+                    <h3>P&L by Account</h3>
+                    <canvas id="pnlByAccountChart"></canvas>
+                </div>
+                
+                <!-- Win Rate Over Time (Monthly) -->
+                <div class="chart-container">
+                    <h3>Win Rate Over Time (Monthly)</h3>
+                    <canvas id="winRateOverTimeChart"></canvas>
+                </div>
+            </div>
+        </section>
+        
+        <!-- ===== SETTINGS PAGE ===== -->
+        <section id="settings" class="page">
+            <div class="page-header">
+                <h1>Settings</h1>
+            </div>
+            
+            <div class="settings-grid">
+                <!-- Theme Toggle -->
+                <div class="settings-card">
+                    <h3>Theme</h3>
+                    <div class="setting-row">
+                        <span>Dark Mode</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="themeToggle" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- Manage Accounts -->
+                <div class="settings-card">
+                    <h3>Manage Accounts</h3>
+                    <div class="setting-row">
+                        <input type="text" id="newAccount" placeholder="Account name...">
+                        <button class="btn btn-primary" id="addAccountBtn">Add</button>
+                    </div>
+                    <ul id="accountsList" class="settings-list"></ul>
+                </div>
+                
+                <!-- Manage Sessions -->
+                <div class="settings-card">
+                    <h3>Manage Sessions</h3>
+                    <div class="setting-row">
+                        <input type="text" id="newSession" placeholder="Session name...">
+                        <button class="btn btn-primary" id="addSessionBtn">Add</button>
+                    </div>
+                    <ul id="sessionsList" class="settings-list"></ul>
+                </div>
+                
+                <!-- Manage Instrument Categories -->
+                <div class="settings-card">
+                    <h3>Manage Instrument Categories</h3>
+                    <div class="setting-row">
+                        <input type="text" id="newCategory" placeholder="Category name...">
+                        <button class="btn btn-primary" id="addCategoryBtn">Add</button>
+                    </div>
+                    <ul id="categoriesList" class="settings-list">
+                        <li>Stocks <button class="btn-delete">×</button></li>
+                        <li>Forex <button class="btn-delete">×</button></li>
+                        <li>Crypto <button class="btn-delete">×</button></li>
+                        <li>Indices <button class="btn-delete">×</button></li>
+                        <li>Commodities <button class="btn-delete">×</button></li>
+                    </ul>
+                </div>
+                
+                <!-- Data Management -->
+                <div class="settings-card">
+                    <h3>Data Management</h3>
+                    <div class="setting-row">
+                        <button class="btn btn-danger" id="exportDataBtn">Export Data (JSON)</button>
+                        <button class="btn btn-danger" id="importDataBtn">Import Data (JSON)</button>
+                        <button class="btn btn-danger" id="clearDataBtn">Clear All Data</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+    </main>
+    
+    <!-- ========== SCRIPTS ========== -->
+    <script src="js/storage.js"></script>
+    <script src="js/dashboard.js"></script>
+    <script src="js/trades.js"></script>
+    <script src="js/addTrade.js"></script>
+    <script src="js/analytics.js"></script>
+    <script src="js/settings.js"></script>
+    <script src="js/app.js"></script>
+    
+</body>
+</html>
