@@ -14,6 +14,9 @@ document.addEventListener('DOMContentLoaded', () => {
     initAnalytics();
     initSettings();
     
+    // Populate all dropdowns first
+    populateFilterDropdowns();
+    
     // Load default page
     navigateTo('dashboard');
 });
@@ -49,7 +52,9 @@ function navigateTo(page) {
         targetPage.classList.add('active');
         currentPage = page;
         
-        // Refresh page content
+        // Refresh dropdowns and page content
+        populateFilterDropdowns();
+        
         if (page === 'dashboard') refreshDashboard();
         if (page === 'trades') refreshTrades();
         if (page === 'addTrade') refreshAddTradeForm();
@@ -65,17 +70,6 @@ function applyTheme() {
         document.body.classList.add('light');
     } else {
         document.body.classList.remove('light');
-    }
-}
-
-function toggleTheme() {
-    const isLight = document.body.classList.contains('light');
-    if (isLight) {
-        document.body.classList.remove('light');
-        setTheme('dark');
-    } else {
-        document.body.classList.add('light');
-        setTheme('light');
     }
 }
 
@@ -98,18 +92,18 @@ function formatCurrency(amount) {
     const num = parseFloat(amount);
     if (isNaN(num)) return '$0.00';
     
-    const abs = Math.abs(num);
-    const formatted = abs.toFixed(2);
-    
-    if (num < 0) {
-        return `-$${formatted}`;
-    }
-    return `$${formatted}`;
+    return num.toLocaleString('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
 }
 
 function formatDate(dateString) {
     if (!dateString) return '-';
     const date = new Date(dateString);
+    if (isNaN(date.getTime())) return dateString;
     return date.toLocaleString('en-US', {
         year: 'numeric',
         month: '2-digit',
@@ -124,6 +118,7 @@ function formatDate(dateString) {
 function formatDateShort(dateString) {
     if (!dateString) return '-';
     const date = new Date(dateString);
+    if (isNaN(date.getTime())) return dateString;
     return date.toLocaleDateString('en-US', {
         month: 'short',
         day: 'numeric'
@@ -151,7 +146,7 @@ function populateFilterDropdowns() {
             accounts.forEach(acc => {
                 select.innerHTML += `<option value="${acc}">${acc}</option>`;
             });
-            select.value = currentValue;
+            if (currentValue) select.value = currentValue;
         }
     });
     
@@ -170,11 +165,11 @@ function populateFilterDropdowns() {
             sessions.forEach(sess => {
                 select.innerHTML += `<option value="${sess}">${sess}</option>`;
             });
-            select.value = currentValue;
+            if (currentValue) select.value = currentValue;
         }
     });
     
-    // Category filters in trade form
+    // Add Trade form session select
     const sessionSelect = document.getElementById('session');
     if (sessionSelect) {
         const currentValue = sessionSelect.value;
@@ -182,9 +177,10 @@ function populateFilterDropdowns() {
         sessions.forEach(sess => {
             sessionSelect.innerHTML += `<option value="${sess}">${sess}</option>`;
         });
-        sessionSelect.value = currentValue;
+        if (currentValue) sessionSelect.value = currentValue;
     }
     
+    // Add Trade form account select
     const accountSelect = document.getElementById('account');
     if (accountSelect) {
         const currentValue = accountSelect.value;
@@ -192,17 +188,7 @@ function populateFilterDropdowns() {
         accounts.forEach(acc => {
             accountSelect.innerHTML += `<option value="${acc}">${acc}</option>`;
         });
-        accountSelect.value = currentValue;
-    }
-    
-    const categorySelect = document.getElementById('category');
-    if (categorySelect) {
-        const currentValue = categorySelect.value;
-        categorySelect.innerHTML = '<option value="">Select...</option>';
-        categories.forEach(cat => {
-            categorySelect.innerHTML += `<option value="${cat}">${cat}</option>`;
-        });
-        categorySelect.value = currentValue;
+        if (currentValue) accountSelect.value = currentValue;
     }
     
     // Instrument filters in dashboard/trades/analytics
@@ -220,7 +206,7 @@ function populateFilterDropdowns() {
             categories.forEach(cat => {
                 select.innerHTML += `<option value="${cat}">${cat}</option>`;
             });
-            select.value = currentValue;
+            if (currentValue) select.value = currentValue;
         }
     });
 }
