@@ -39,7 +39,7 @@ function renderTradesTable(trades) {
     if (trades.length === 0) {
         tbody.innerHTML = `
             <tr class="empty-row">
-                <td colspan="16">No trades found</td>
+                <td colspan="14">No trades found</td>
             </tr>
         `;
         return;
@@ -73,27 +73,27 @@ function createTradeRow(trade) {
     const profitFormatted = formatCurrency(profit);
     
     const entryDate = formatDate(trade.entryDate);
-    const exitDate = formatDate(trade.exitDate);
     
-    const screenshotCell = trade.screenshot 
-        ? `<a href="screenshots/${trade.screenshot}" target="_blank" class="screenshot-link">📸 View</a>`
-        : '-';
+    const resultClass = trade.result === 'Win' ? 'result-win' : trade.result === 'Loss' ? 'result-loss' : 'result-breakeven';
+    
+    const screenshotCell = trade.screenshot && trade.screenshot.startsWith('data:')
+        ? `<a href="${trade.screenshot}" target="_blank" class="screenshot-link">📸 View</a>`
+        : trade.screenshot
+            ? `<a href="screenshots/${trade.screenshot}" target="_blank" class="screenshot-link">📸 View</a>`
+            : '-';
     
     return `
         <tr>
             <td>${entryDate}</td>
-            <td>${exitDate}</td>
             <td><strong>${trade.instrument || '-'}</strong></td>
-            <td>${trade.category || '-'}</td>
             <td>${trade.size || '-'}</td>
             <td>${formatCurrency(trade.entryPrice)}</td>
             <td>${formatCurrency(trade.exitPrice)}</td>
-            <td class="${profitClass}">${profitFormatted}</td>
             <td><span class="type-badge type-${trade.type?.toLowerCase()}">${trade.type || '-'}</span></td>
-            <td>${trade.mfe || '-'}</td>
-            <td>${trade.mae || '-'}</td>
             <td>${trade.session || '-'}</td>
             <td>${trade.account || '-'}</td>
+            <td class="${profitClass}">${profitFormatted}</td>
+            <td><span class="result-badge ${resultClass}">${trade.result || '-'}</span></td>
             <td class="note-cell" title="${trade.note || ''}">${truncateText(trade.note, 30)}</td>
             <td>${screenshotCell}</td>
             <td class="actions-cell">
@@ -109,7 +109,6 @@ function deleteTradeAndRefresh(tradeId) {
     if (confirm('Are you sure you want to delete this trade? This cannot be undone.')) {
         deleteTrade(tradeId);
         refreshTrades();
-        // Refresh dashboard if on that page
         if (currentPage === 'dashboard') refreshDashboard();
     }
 }
@@ -127,17 +126,15 @@ function editTrade(tradeId) {
     // Populate form with trade data
     setTimeout(() => {
         document.getElementById('entryDate').value = trade.entryDate || '';
-        document.getElementById('exitDate').value = trade.exitDate || '';
         document.getElementById('instrument').value = trade.instrument || '';
-        document.getElementById('category').value = trade.category || '';
         document.getElementById('size').value = trade.size || '';
         document.getElementById('entryPrice').value = trade.entryPrice || '';
         document.getElementById('exitPrice').value = trade.exitPrice || '';
         document.getElementById('type').value = trade.type || 'Buy';
-        document.getElementById('mfe').value = trade.mfe || '';
-        document.getElementById('mae').value = trade.mae || '';
         document.getElementById('session').value = trade.session || '';
         document.getElementById('account').value = trade.account || '';
+        document.getElementById('pnl').value = trade.profit || 0;
+        document.getElementById('result').value = trade.result || '';
         document.getElementById('note').value = trade.note || '';
         
         // Store editing ID
@@ -150,7 +147,11 @@ function editTrade(tradeId) {
         // Show current screenshot if exists
         if (trade.screenshot) {
             const preview = document.getElementById('screenshotPreview');
-            preview.innerHTML = `<p>Current: <a href="screenshots/${trade.screenshot}" target="_blank">${trade.screenshot}</a></p>`;
+            if (trade.screenshot.startsWith('data:')) {
+                preview.innerHTML = `<p>Current screenshot:</p><img src="${trade.screenshot}" alt="Current screenshot" style="max-width: 200px;">`;
+            } else {
+                preview.innerHTML = `<p>Current: <a href="screenshots/${trade.screenshot}" target="_blank">${trade.screenshot}</a></p>`;
+            }
         }
     }, 100);
 }
