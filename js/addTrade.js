@@ -1,164 +1,154 @@
-// ========== TRADES.JS - Trade History Logic ==========
+// ========== ADDTRADE.JS - Add/Edit Trade Form Logic ==========
 
-// ========== INIT TRADES ==========
-function initTrades() {
-    // Filter change listeners
-    document.getElementById('tradesSessionFilter').addEventListener('change', refreshTrades);
-    document.getElementById('tradesDateFrom').addEventListener('change', refreshTrades);
-    document.getElementById('tradesDateTo').addEventListener('change', refreshTrades);
-    document.getElementById('tradesInstrumentFilter').addEventListener('change', refreshTrades);
-    document.getElementById('tradesAccountFilter').addEventListener('change', refreshTrades);
-    document.getElementById('tradesTypeFilter').addEventListener('change', refreshTrades);
-    document.getElementById('tradesSearch').addEventListener('input', refreshTrades);
+function initAddTrade() {
+    const form = document.getElementById('addTradeForm');
+    if (!form) return;
+    
+    form.addEventListener('submit', handleTradeSubmit);
+    form.addEventListener('reset', handleFormReset);
+    
+    const screenshotInput = document.getElementById('screenshot');
+    if (screenshotInput) {
+        screenshotInput.addEventListener('change', handleScreenshotPreview);
+    }
 }
 
-// ========== REFRESH TRADES ==========
-function refreshTrades() {
-    const filters = getTradesFilters();
-    const trades = getFilteredTrades(filters);
-    renderTradesTable(trades);
+function refreshAddTradeForm() {
+    const form = document.getElementById('addTradeForm');
+    if (!form) return;
+    
+    delete form.dataset.editId;
+    form.querySelector('.btn-primary').textContent = 'Add Trade';
+    
+    const preview = document.getElementById('screenshotPreview');
+    if (preview) preview.innerHTML = '';
+    
+    populateFilterDropdowns();
 }
 
-// ========== GET FILTERS ==========
-function getTradesFilters() {
-    return {
-        session: document.getElementById('tradesSessionFilter').value,
-        dateFrom: document.getElementById('tradesDateFrom').value,
-        dateTo: document.getElementById('tradesDateTo').value,
-        category: document.getElementById('tradesInstrumentFilter').value,
-        account: document.getElementById('tradesAccountFilter').value,
-        type: document.getElementById('tradesTypeFilter').value,
-        search: document.getElementById('tradesSearch').value
+function handleTradeSubmit(e) {
+    e.preventDefault();
+    
+    const form = document.getElementById('addTradeForm');
+    const editId = form.dataset.editId;
+    
+    const tradeData = {
+        entryDate: document.getElementById('entryDate').value,
+        exitDate: document.getElementById('entryDate').value,
+        instrument: document.getElementById('instrument').value.trim(),
+        category: '',
+        size: parseFloat(document.getElementById('size').value) || 0,
+        entryPrice: parseFloat(document.getElementById('entryPrice').value) || 0,
+        exitPrice: parseFloat(document.getElementById('exitPrice').value) || 0,
+        type: document.getElementById('type').value,
+        session: document.getElementById('session').value,
+        account: document.getElementById('account').value,
+        profit: parseFloat(document.getElementById('pnl').value) || 0,
+        result: document.getElementById('result').value,
+        mfe: 0,
+        mae: 0,
+        note: document.getElementById('note').value.trim(),
+        screenshot: ''
     };
-}
-
-// ========== RENDER TRADES TABLE ==========
-function renderTradesTable(trades) {
-    const tbody = document.getElementById('tradesTableBody');
     
-    if (trades.length === 0) {
-        tbody.innerHTML = `
-            <tr class="empty-row">
-                <td colspan="14">No trades found</td>
-            </tr>
-        `;
-        return;
-    }
+    const screenshotInput = document.getElementById('screenshot');
+    const screenshotFile = screenshotInput ? screenshotInput.files[0] : null;
     
-    // Sort trades by entry date (most recent first)
-    const sortedTrades = [...trades].sort((a, b) => new Date(b.entryDate) - new Date(a.entryDate));
-    
-    tbody.innerHTML = sortedTrades.map(trade => createTradeRow(trade)).join('');
-    
-    // Add event listeners to action buttons
-    tbody.querySelectorAll('.action-btn.delete').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const tradeId = e.target.dataset.id;
-            deleteTradeAndRefresh(tradeId);
-        });
-    });
-    
-    tbody.querySelectorAll('.action-btn.edit').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const tradeId = e.target.dataset.id;
-            editTrade(tradeId);
-        });
-    });
-}
-
-// ========== CREATE TRADE ROW ==========
-function createTradeRow(trade) {
-    const profit = parseFloat(trade.profit || 0);
-    const profitClass = profit > 0 ? 'profit-positive' : profit < 0 ? 'profit-negative' : '';
-    const profitFormatted = formatCurrency(profit);
-    
-    const entryDate = formatDate(trade.entryDate);
-    
-    const resultClass = trade.result === 'Win' ? 'result-win' : trade.result === 'Loss' ? 'result-loss' : 'result-breakeven';
-    
-    const screenshotCell = trade.screenshot && trade.screenshot.startsWith('data:')
-        ? `<a href="${trade.screenshot}" target="_blank" class="screenshot-link">📸 View</a>`
-        : trade.screenshot
-            ? `<a href="screenshots/${trade.screenshot}" target="_blank" class="screenshot-link">📸 View</a>`
-            : '-';
-    
-    return `
-        <tr>
-            <td>${entryDate}</td>
-            <td><strong>${trade.instrument || '-'}</strong></td>
-            <td>${trade.size || '-'}</td>
-            <td>${formatCurrency(trade.entryPrice)}</td>
-            <td>${formatCurrency(trade.exitPrice)}</td>
-            <td><span class="type-badge type-${trade.type?.toLowerCase()}">${trade.type || '-'}</span></td>
-            <td>${trade.session || '-'}</td>
-            <td>${trade.account || '-'}</td>
-            <td class="${profitClass}">${profitFormatted}</td>
-            <td><span class="result-badge ${resultClass}">${trade.result || '-'}</span></td>
-            <td class="note-cell" title="${trade.note || ''}">${truncateText(trade.note, 30)}</td>
-            <td>${screenshotCell}</td>
-            <td class="actions-cell">
-                <button class="action-btn edit" data-id="${trade.id}" title="Edit">✏️</button>
-                <button class="action-btn delete" data-id="${trade.id}" title="Delete">🗑️</button>
-            </td>
-        </tr>
-    `;
-}
-
-// ========== DELETE TRADE ==========
-function deleteTradeAndRefresh(tradeId) {
-    if (confirm('Are you sure you want to delete this trade? This cannot be undone.')) {
-        deleteTrade(tradeId);
-        refreshTrades();
-        if (currentPage === 'dashboard') refreshDashboard();
-    }
-}
-
-// ========== EDIT TRADE ==========
-function editTrade(tradeId) {
-    const trades = getTrades();
-    const trade = trades.find(t => t.id === tradeId);
-    
-    if (!trade) return;
-    
-    // Switch to Add Trade page
-    navigateTo('addTrade');
-    
-    // Populate form with trade data
-    setTimeout(() => {
-        document.getElementById('entryDate').value = trade.entryDate || '';
-        document.getElementById('instrument').value = trade.instrument || '';
-        document.getElementById('size').value = trade.size || '';
-        document.getElementById('entryPrice').value = trade.entryPrice || '';
-        document.getElementById('exitPrice').value = trade.exitPrice || '';
-        document.getElementById('type').value = trade.type || 'Buy';
-        document.getElementById('session').value = trade.session || '';
-        document.getElementById('account').value = trade.account || '';
-        document.getElementById('pnl').value = trade.profit || 0;
-        document.getElementById('result').value = trade.result || '';
-        document.getElementById('note').value = trade.note || '';
-        
-        // Store editing ID
-        document.getElementById('addTradeForm').dataset.editId = tradeId;
-        
-        // Change button text
-        const submitBtn = document.querySelector('#addTradeForm .btn-primary');
-        submitBtn.textContent = 'Update Trade';
-        
-        // Show current screenshot if exists
-        if (trade.screenshot) {
-            const preview = document.getElementById('screenshotPreview');
-            if (trade.screenshot.startsWith('data:')) {
-                preview.innerHTML = `<p>Current screenshot:</p><img src="${trade.screenshot}" alt="Current screenshot" style="max-width: 200px;">`;
-            } else {
-                preview.innerHTML = `<p>Current: <a href="screenshots/${trade.screenshot}" target="_blank">${trade.screenshot}</a></p>`;
+    if (screenshotFile) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            tradeData.screenshot = event.target.result;
+            saveTradeData(tradeData, editId);
+        };
+        reader.readAsDataURL(screenshotFile);
+    } else {
+        if (editId) {
+            const trades = getTrades();
+            const existing = trades.find(t => t.id === editId);
+            if (existing && existing.screenshot) {
+                tradeData.screenshot = existing.screenshot;
             }
         }
-    }, 100);
+        saveTradeData(tradeData, editId);
+    }
 }
 
-// ========== TRUNCATE TEXT ==========
-function truncateText(text, maxLength) {
-    if (!text) return '-';
-    if (text.length <= maxLength) return text;
-    return text.substring(0, maxLength) + '...';
+function saveTradeData(tradeData, editId) {
+    if (editId) {
+        updateTrade(editId, tradeData);
+        showNotification('Trade updated!', 'success');
+    } else {
+        addTrade(tradeData);
+        showNotification('Trade added!', 'success');
+    }
+    
+    const form = document.getElementById('addTradeForm');
+    form.reset();
+    
+    const preview = document.getElementById('screenshotPreview');
+    if (preview) preview.innerHTML = '';
+    
+    delete form.dataset.editId;
+    form.querySelector('.btn-primary').textContent = 'Add Trade';
+    
+    populateFilterDropdowns();
+    if (currentPage === 'dashboard') refreshDashboard();
+    if (currentPage === 'trades') refreshTrades();
+}
+
+function handleFormReset() {
+    const form = document.getElementById('addTradeForm');
+    delete form.dataset.editId;
+    form.querySelector('.btn-primary').textContent = 'Add Trade';
+    
+    const preview = document.getElementById('screenshotPreview');
+    if (preview) preview.innerHTML = '';
+}
+
+function handleScreenshotPreview(e) {
+    const file = e.target.files[0];
+    const preview = document.getElementById('screenshotPreview');
+    if (!preview) return;
+    
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            preview.innerHTML = `
+                <img src="${event.target.result}" alt="Preview">
+                <p>${file.name} (${formatFileSize(file.size)})</p>
+            `;
+        };
+        reader.readAsDataURL(file);
+    } else {
+        preview.innerHTML = '';
+    }
+}
+
+function formatFileSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / 1048576).toFixed(1) + ' MB';
+}
+
+function showNotification(message, type = 'info') {
+    const existing = document.querySelector('.notification');
+    if (existing) existing.remove();
+    
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.textContent = message;
+    notification.style.cssText = `
+        position: fixed; top: 20px; right: 20px; padding: 12px 20px;
+        border-radius: 8px; font-size: 14px; font-weight: 600;
+        z-index: 9999; animation: slideIn 0.3s ease;
+        background: ${type === 'success' ? '#22c55e' : type === 'error' ? '#ef4444' : '#3b82f6'};
+        color: #ffffff;
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
 }
