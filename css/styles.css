@@ -201,15 +201,16 @@ body.light .filter-bar input[type="date"] {
 }
 
 /* ========== STATS GRID ========== */
+/* ========== STATS GRID ========== */
 .stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    grid-template-columns: repeat(6, 1fr);
     gap: 12px;
     margin-bottom: 20px;
 }
 
 .stats-grid-small {
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(4, 1fr);
 }
 
 .stat-card {
@@ -220,6 +221,7 @@ body.light .filter-bar input[type="date"] {
     display: flex;
     flex-direction: column;
     gap: 6px;
+    min-width: 0;
 }
 
 .stat-label {
@@ -227,11 +229,17 @@ body.light .filter-bar input[type="date"] {
     color: var(--text-muted);
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .stat-value {
     font-size: 22px;
     font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .stat-value.win {
@@ -240,6 +248,260 @@ body.light .filter-bar input[type="date"] {
 
 .stat-value.loss {
     color: var(--loss-color);
+}
+
+/* ... keep everything else the same until responsive ... */
+
+/* ========== RESPONSIVE - TABLET ========== */
+@media (max-width: 1024px) {
+    .stats-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    
+    .stats-grid-small {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .analytics-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .form-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .stat-value {
+        font-size: 18px;
+    }
+}
+
+/* ========== RESPONSIVE - MOBILE ========== */
+@media (max-width: 768px) {
+    body {
+        flex-direction: column;
+        padding-bottom: 70px;
+    }
+    
+    .sidebar {
+        position: fixed;
+        top: auto;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
+        height: 65px;
+        flex-direction: row;
+        border-right: none;
+        border-top: 1px solid var(--border-color);
+        z-index: 1000;
+        padding: 0;
+        background: var(--bg-secondary);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+    }
+    
+    .sidebar-header,
+    .sidebar-footer {
+        display: none;
+    }
+    
+    .sidebar-nav {
+        padding: 0;
+        width: 100%;
+        height: 100%;
+    }
+    
+    .sidebar-nav ul {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-around;
+        align-items: center;
+        height: 100%;
+        padding: 0 4px;
+    }
+    
+    .sidebar-nav li {
+        margin-bottom: 0;
+        flex: 1;
+    }
+    
+    .nav-btn {
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 4px;
+        padding: 8px 4px;
+        font-size: 10px;
+        border-radius: 6px;
+        text-align: center;
+        height: 100%;
+    }
+    
+    .nav-btn .nav-icon {
+        font-size: 20px;
+        width: auto;
+        margin: 0;
+    }
+    
+    .nav-btn span:not(.nav-icon) {
+        display: block;
+        font-size: 10px;
+    }
+    
+    .main-content {
+        margin-left: 0;
+        padding: 16px;
+        min-height: calc(100vh - 65px);
+        width: 100%;
+    }
+    
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+    }
+    
+    .stats-grid-small {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+    }
+    
+    .stat-card {
+        padding: 12px;
+    }
+    
+    .stat-value {
+        font-size: 16px;
+    }
+    
+    .stat-label {
+        font-size: 10px;
+    }
+    
+    .page-header {
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .page-header h1 {
+        font-size: 20px;
+    }
+    
+    .filter-bar {
+        width: 100%;
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        padding-bottom: 4px;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .filter-bar select,
+    .filter-bar input {
+        flex-shrink: 0;
+        font-size: 12px;
+        padding: 6px 10px;
+    }
+    
+    .chart-container {
+        padding: 12px;
+    }
+    
+    .chart-container h3 {
+        font-size: 13px;
+        margin-bottom: 12px;
+    }
+    
+    .chart-container canvas {
+        max-height: 250px;
+    }
+    
+    .analytics-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+    
+    .form-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .trade-form {
+        padding: 16px;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .form-actions .btn {
+        width: 100%;
+    }
+    
+    .settings-grid {
+        max-width: 100%;
+    }
+    
+    .setting-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .setting-row input[type="text"] {
+        width: 100%;
+    }
+    
+    .notification {
+        top: 10px !important;
+        right: 10px !important;
+        left: 10px !important;
+        text-align: center;
+        font-size: 13px;
+        padding: 10px 16px;
+    }
+}
+
+/* ========== RESPONSIVE - SMALL MOBILE ========== */
+@media (max-width: 400px) {
+    .stats-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+    }
+    
+    .stats-grid-small {
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+    }
+    
+    .stat-card {
+        padding: 10px 8px;
+    }
+    
+    .stat-label {
+        font-size: 9px;
+    }
+    
+    .stat-value {
+        font-size: 14px;
+    }
+    
+    .nav-btn {
+        padding: 6px 2px;
+    }
+    
+    .nav-btn .nav-icon {
+        font-size: 18px;
+    }
+    
+    .nav-btn span:not(.nav-icon) {
+        font-size: 9px;
+    }
+    
+    .main-content {
+        padding: 10px;
+    }
+    
+    .page-header h1 {
+        font-size: 18px;
+    }
 }
 
 /* ========== CHART CONTAINERS ========== */
