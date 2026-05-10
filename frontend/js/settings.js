@@ -20,11 +20,11 @@ function initSettings() {
     });
 }
 
-function refreshSettings() {
+async function refreshSettings() {
     const theme = getTheme();
     document.getElementById('themeToggle').checked = theme === 'dark';
-    renderAccountsList();
-    renderSessionsList();
+    await renderAccountsList();
+    await renderSessionsList();
     renderCategoriesList();
 }
 
@@ -36,62 +36,59 @@ function handleThemeToggle(e) {
         document.body.classList.add('light');
         setTheme('light');
     }
-    
     setTimeout(() => {
         if (currentPage === 'dashboard') refreshDashboard();
         if (currentPage === 'analytics') refreshAnalytics();
     }, 100);
 }
 
-function handleAddAccount() {
+async function handleAddAccount() {
     const input = document.getElementById('newAccount');
     const name = input.value.trim();
     if (!name) return showNotification('Enter an account name', 'error');
-    
-    addAccount(name);
+    await addAccount(name);
     input.value = '';
-    renderAccountsList();
+    await renderAccountsList();
     populateFilterDropdowns();
     showNotification(`"${name}" added`, 'success');
 }
 
-function handleRemoveAccount(name) {
-    removeAccount(name);
-    renderAccountsList();
+async function handleRemoveAccount(name) {
+    await removeAccount(name);
+    await renderAccountsList();
     populateFilterDropdowns();
     showNotification(`"${name}" removed`, 'success');
 }
 
-function renderAccountsList() {
+async function renderAccountsList() {
     const list = document.getElementById('accountsList');
-    const accounts = getAccounts();
+    const accounts = await getAccounts();
     list.innerHTML = accounts.length === 0 
         ? '<li class="empty-hint">No accounts</li>'
         : accounts.map(a => `<li><span>${a}</span><button class="btn-delete" onclick="handleRemoveAccount('${a.replace(/'/g, "\\'")}')">×</button></li>`).join('');
 }
 
-function handleAddSession() {
+async function handleAddSession() {
     const input = document.getElementById('newSession');
     const name = input.value.trim();
     if (!name) return showNotification('Enter a session name', 'error');
-    
-    addSession(name);
+    await addSession(name);
     input.value = '';
-    renderSessionsList();
+    await renderSessionsList();
     populateFilterDropdowns();
     showNotification(`"${name}" added`, 'success');
 }
 
-function handleRemoveSession(name) {
-    removeSession(name);
-    renderSessionsList();
+async function handleRemoveSession(name) {
+    await removeSession(name);
+    await renderSessionsList();
     populateFilterDropdowns();
     showNotification(`"${name}" removed`, 'success');
 }
 
-function renderSessionsList() {
+async function renderSessionsList() {
     const list = document.getElementById('sessionsList');
-    const sessions = getSessions();
+    const sessions = await getSessions();
     list.innerHTML = sessions.length === 0
         ? '<li class="empty-hint">No sessions</li>'
         : sessions.map(s => `<li><span>${s}</span><button class="btn-delete" onclick="handleRemoveSession('${s.replace(/'/g, "\\'")}')">×</button></li>`).join('');
@@ -101,7 +98,6 @@ function handleAddCategory() {
     const input = document.getElementById('newCategory');
     const name = input.value.trim();
     if (!name) return showNotification('Enter a category name', 'error');
-    
     addCategory(name);
     input.value = '';
     renderCategoriesList();
@@ -124,8 +120,8 @@ function renderCategoriesList() {
         : categories.map(c => `<li><span>${c}</span><button class="btn-delete" onclick="handleRemoveCategory('${c.replace(/'/g, "\\'")}')">×</button></li>`).join('');
 }
 
-function handleExportData() {
-    const data = exportData();
+async function handleExportData() {
+    const data = await exportData();
     const blob = new Blob([data], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -146,11 +142,11 @@ function handleImportData() {
         const file = e.target.files[0];
         if (!file) return;
         const reader = new FileReader();
-        reader.onload = function(event) {
-            if (importData(event.target.result)) {
+        reader.onload = async function(event) {
+            if (await importData(event.target.result)) {
                 showNotification('Data imported', 'success');
                 populateFilterDropdowns();
-                refreshSettings();
+                await refreshSettings();
                 navigateTo('dashboard');
             } else {
                 showNotification('Invalid file', 'error');
@@ -161,15 +157,36 @@ function handleImportData() {
     input.click();
 }
 
-function handleClearData() {
+async function handleClearData() {
     if (confirm('Delete ALL data? This cannot be undone.')) {
         if (confirm('Final warning: permanently delete everything?')) {
-            clearAllData();
+            await clearAllData();
             populateFilterDropdowns();
-            refreshSettings();
+            await refreshSettings();
             refreshDashboard();
             refreshTrades();
             showNotification('All data cleared', 'success');
         }
     }
+}
+
+function showNotification(message, type = 'info') {
+    const existing = document.querySelector('.notification');
+    if (existing) existing.remove();
+    
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.textContent = message;
+    notification.style.cssText = `
+        position: fixed; top: 20px; right: 20px; padding: 12px 20px;
+        border-radius: 8px; font-size: 14px; font-weight: 600;
+        z-index: 9999; animation: slideIn 0.3s ease;
+        background: ${type === 'success' ? '#22c55e' : type === 'error' ? '#ef4444' : '#3b82f6'};
+        color: #ffffff;
+    `;
+    document.body.appendChild(notification);
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
 }

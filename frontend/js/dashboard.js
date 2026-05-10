@@ -4,7 +4,6 @@ let pnlChart = null;
 
 // ========== INIT DASHBOARD ==========
 function initDashboard() {
-    // Filter change listeners
     document.getElementById('dashboardSessionFilter').addEventListener('change', refreshDashboard);
     document.getElementById('dashboardDateFrom').addEventListener('change', refreshDashboard);
     document.getElementById('dashboardDateTo').addEventListener('change', refreshDashboard);
@@ -13,9 +12,9 @@ function initDashboard() {
 }
 
 // ========== REFRESH DASHBOARD ==========
-function refreshDashboard() {
+async function refreshDashboard() {
     const filters = getDashboardFilters();
-    const trades = getFilteredTrades(filters);
+    const trades = await getFilteredTrades(filters);
     
     updateSummaryCards(trades);
     updateWinLossCards(trades);
@@ -36,12 +35,11 @@ function getDashboardFilters() {
 // ========== UPDATE SUMMARY CARDS ==========
 function updateSummaryCards(trades) {
     const totalTrades = trades.length;
-    const wins = trades.filter(t => t.profit > 0);
-    const losses = trades.filter(t => t.profit < 0);
+    const wins = trades.filter(t => parseFloat(t.profit || 0) > 0);
+    const losses = trades.filter(t => parseFloat(t.profit || 0) < 0);
     const totalPnL = trades.reduce((sum, t) => sum + parseFloat(t.profit || 0), 0);
     const winRate = totalTrades > 0 ? (wins.length / totalTrades) * 100 : 0;
     
-    // Profit Factor
     const grossProfit = wins.reduce((sum, t) => sum + parseFloat(t.profit || 0), 0);
     const grossLoss = Math.abs(losses.reduce((sum, t) => sum + parseFloat(t.profit || 0), 0));
     const profitFactor = grossLoss > 0 ? grossProfit / grossLoss : grossProfit > 0 ? Infinity : 0;
@@ -58,10 +56,9 @@ function updateSummaryCards(trades) {
 
 // ========== UPDATE WIN/LOSS CARDS ==========
 function updateWinLossCards(trades) {
-    const wins = trades.filter(t => t.profit > 0);
-    const losses = trades.filter(t => t.profit < 0);
+    const wins = trades.filter(t => parseFloat(t.profit || 0) > 0);
+    const losses = trades.filter(t => parseFloat(t.profit || 0) < 0);
     
-    // Biggest win
     if (wins.length > 0) {
         const biggestWin = Math.max(...wins.map(t => parseFloat(t.profit || 0)));
         document.getElementById('biggestWin').textContent = formatCurrency(biggestWin);
@@ -69,7 +66,6 @@ function updateWinLossCards(trades) {
         document.getElementById('biggestWin').textContent = '$0.00';
     }
     
-    // Biggest loss
     if (losses.length > 0) {
         const biggestLoss = Math.min(...losses.map(t => parseFloat(t.profit || 0)));
         document.getElementById('biggestLoss').textContent = formatCurrency(biggestLoss);
@@ -77,7 +73,6 @@ function updateWinLossCards(trades) {
         document.getElementById('biggestLoss').textContent = '$0.00';
     }
     
-    // Average win
     if (wins.length > 0) {
         const avgWin = wins.reduce((sum, t) => sum + parseFloat(t.profit || 0), 0) / wins.length;
         document.getElementById('avgWin').textContent = formatCurrency(avgWin);
@@ -85,7 +80,6 @@ function updateWinLossCards(trades) {
         document.getElementById('avgWin').textContent = '$0.00';
     }
     
-    // Average loss
     if (losses.length > 0) {
         const avgLoss = losses.reduce((sum, t) => sum + parseFloat(t.profit || 0), 0) / losses.length;
         document.getElementById('avgLoss').textContent = formatCurrency(avgLoss);
@@ -98,7 +92,6 @@ function updateWinLossCards(trades) {
 function updatePnLChart(trades) {
     const ctx = document.getElementById('pnlChart').getContext('2d');
     
-    // Destroy existing chart
     if (pnlChart) {
         pnlChart.destroy();
     }
@@ -124,21 +117,18 @@ function updatePnLChart(trades) {
         return;
     }
     
-    // Sort trades by exit date
-    const sortedTrades = [...trades].sort((a, b) => new Date(a.exitDate) - new Date(b.exitDate));
+    const sortedTrades = [...trades].sort((a, b) => new Date(a.entryDate) - new Date(b.entryDate));
     
-    // Build cumulative P&L
     let cumulative = 0;
     const labels = [];
     const data = [];
     
     sortedTrades.forEach(trade => {
         cumulative += parseFloat(trade.profit || 0);
-        labels.push(formatDateShort(trade.exitDate));
+        labels.push(formatDateShort(trade.entryDate));
         data.push(cumulative);
     });
     
-    // Color based on overall P&L
     const finalPnL = data[data.length - 1];
     const lineColor = finalPnL >= 0 ? '#22c55e' : '#ef4444';
     const fillColor = finalPnL >= 0 ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)';
@@ -172,9 +162,7 @@ function getChartOptions() {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-            legend: {
-                display: false
-            },
+            legend: { display: false },
             tooltip: {
                 callbacks: {
                     label: function(context) {
@@ -185,28 +173,12 @@ function getChartOptions() {
         },
         scales: {
             x: {
-                ticks: {
-                    color: textColor,
-                    maxTicksLimit: 20,
-                    font: { size: 11 }
-                },
-                grid: {
-                    color: gridColor,
-                    drawBorder: false
-                }
+                ticks: { color: textColor, maxTicksLimit: 20, font: { size: 11 } },
+                grid: { color: gridColor, drawBorder: false }
             },
             y: {
-                ticks: {
-                    color: textColor,
-                    callback: function(value) {
-                        return formatCurrency(value);
-                    },
-                    font: { size: 11 }
-                },
-                grid: {
-                    color: gridColor,
-                    drawBorder: false
-                }
+                ticks: { color: textColor, callback: v => formatCurrency(v), font: { size: 11 } },
+                grid: { color: gridColor, drawBorder: false }
             }
         }
     };

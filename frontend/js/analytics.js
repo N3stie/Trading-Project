@@ -15,13 +15,15 @@ function initAnalytics() {
 }
 
 // ========== REFRESH ANALYTICS ==========
-function refreshAnalytics() {
+async function refreshAnalytics() {
     const filters = getAnalyticsFilters();
-    const trades = getFilteredTrades(filters);
+    const trades = await getFilteredTrades(filters);
+    const accounts = await getAccounts();
+    const sessions = await getSessions();
     
-    updateWinRateBySession(trades);
+    updateWinRateBySession(trades, sessions);
     updatePnLByCategory(trades);
-    updatePnLByAccount(trades);
+    updatePnLByAccount(trades, accounts);
     updateWinRateOverTime(trades);
 }
 
@@ -37,22 +39,17 @@ function getAnalyticsFilters() {
 }
 
 // ========== WIN RATE BY SESSION ==========
-function updateWinRateBySession(trades) {
+function updateWinRateBySession(trades, sessions) {
     const ctx = document.getElementById('winRateBySessionChart').getContext('2d');
-    
     if (winRateBySessionChart) winRateBySessionChart.destroy();
     
-    // Group by session
-    const sessions = getSessions();
     const sessionData = {};
-    
     sessions.forEach(session => {
         const sessionTrades = trades.filter(t => t.session === session);
-        const wins = sessionTrades.filter(t => t.profit > 0).length;
+        const wins = sessionTrades.filter(t => parseFloat(t.profit || 0) > 0).length;
         const total = sessionTrades.length;
-        const winRate = total > 0 ? (wins / total) * 100 : 0;
         sessionData[session] = {
-            winRate: winRate,
+            winRate: total > 0 ? (wins / total) * 100 : 0,
             total: total
         };
     });
@@ -107,10 +104,8 @@ function updateWinRateBySession(trades) {
 // ========== P&L BY CATEGORY ==========
 function updatePnLByCategory(trades) {
     const ctx = document.getElementById('pnlByCategoryChart').getContext('2d');
-    
     if (pnlByCategoryChart) pnlByCategoryChart.destroy();
     
-    // Group by category
     const categories = getCategories();
     const categoryPnL = {};
     
@@ -163,15 +158,11 @@ function updatePnLByCategory(trades) {
 }
 
 // ========== P&L BY ACCOUNT ==========
-function updatePnLByAccount(trades) {
+function updatePnLByAccount(trades, accounts) {
     const ctx = document.getElementById('pnlByAccountChart').getContext('2d');
-    
     if (pnlByAccountChart) pnlByAccountChart.destroy();
     
-    // Group by account
-    const accounts = getAccounts();
     const accountPnL = {};
-    
     accounts.forEach(acc => {
         const accTrades = trades.filter(t => t.account === acc);
         const totalPnL = accTrades.reduce((sum, t) => sum + parseFloat(t.profit || 0), 0);
@@ -227,7 +218,6 @@ function updatePnLByAccount(trades) {
 // ========== WIN RATE OVER TIME (MONTHLY) ==========
 function updateWinRateOverTime(trades) {
     const ctx = document.getElementById('winRateOverTimeChart').getContext('2d');
-    
     if (winRateOverTimeChart) winRateOverTimeChart.destroy();
     
     if (trades.length === 0) {
@@ -248,11 +238,9 @@ function updateWinRateOverTime(trades) {
         return;
     }
     
-    // Group trades by month
     const monthlyData = {};
-    
     trades.forEach(trade => {
-        const date = new Date(trade.exitDate);
+        const date = new Date(trade.entryDate);
         const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
         const monthLabel = date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
         
@@ -271,9 +259,7 @@ function updateWinRateOverTime(trades) {
         }
     });
     
-    // Sort by date
     const sortedMonths = Object.values(monthlyData).sort((a, b) => a.date - b.date);
-    
     const labels = sortedMonths.map(m => m.label);
     const winRates = sortedMonths.map(m => m.total > 0 ? (m.wins / m.total) * 100 : 0);
     const totals = sortedMonths.map(m => m.total);
@@ -333,30 +319,16 @@ function getAnalyticsChartOptions() {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-            legend: {
-                display: false
-            }
+            legend: { display: false }
         },
         scales: {
             x: {
-                ticks: {
-                    color: textColor,
-                    font: { size: 11 }
-                },
-                grid: {
-                    color: gridColor,
-                    drawBorder: false
-                }
+                ticks: { color: textColor, font: { size: 11 } },
+                grid: { color: gridColor, drawBorder: false }
             },
             y: {
-                ticks: {
-                    color: textColor,
-                    font: { size: 11 }
-                },
-                grid: {
-                    color: gridColor,
-                    drawBorder: false
-                }
+                ticks: { color: textColor, font: { size: 11 } },
+                grid: { color: gridColor, drawBorder: false }
             }
         }
     };

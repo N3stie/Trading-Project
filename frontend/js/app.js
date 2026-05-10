@@ -3,7 +3,7 @@
 let currentPage = 'dashboard';
 
 // ========== INITIALIZATION ==========
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     initStorage();
     applyTheme();
     initNavigation();
@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initAnalytics();
     initSettings();
     
-    populateFilterDropdowns();
+    await populateFilterDropdowns();
     navigateTo('dashboard');
 });
 
@@ -26,7 +26,7 @@ function initNavigation() {
     });
 }
 
-function navigateTo(page) {
+async function navigateTo(page) {
     document.querySelectorAll('.nav-btn').forEach(btn => {
         btn.classList.remove('active');
         if (btn.dataset.page === page) btn.classList.add('active');
@@ -39,13 +39,13 @@ function navigateTo(page) {
         targetPage.classList.add('active');
         currentPage = page;
         
-        populateFilterDropdowns();
+        await populateFilterDropdowns();
         
         if (page === 'dashboard') refreshDashboard();
         if (page === 'trades') refreshTrades();
         if (page === 'addTrade') refreshAddTradeForm();
         if (page === 'analytics') refreshAnalytics();
-        if (page === 'settings') refreshSettings();
+        if (page === 'settings') await refreshSettings();
     }
 }
 
@@ -89,9 +89,9 @@ function formatDateShort(dateString) {
 }
 
 // ========== POPULATE FILTERS ==========
-function populateFilterDropdowns() {
-    const accounts = getAccounts();
-    const sessions = getSessions();
+async function populateFilterDropdowns() {
+    const accounts = await getAccounts();
+    const sessions = await getSessions();
     const categories = getCategories();
     
     const accountFilters = ['dashboardAccountFilter', 'tradesAccountFilter', 'analyticsAccountFilter'];

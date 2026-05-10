@@ -1,98 +1,81 @@
-// ========== STORAGE KEYS ==========
-const STORAGE_KEYS = {
-    TRADES: 'trading_journal_trades',
-    ACCOUNTS: 'trading_journal_accounts',
-    SESSIONS: 'trading_journal_sessions',
-    CATEGORIES: 'trading_journal_categories',
-    THEME: 'trading_journal_theme'
+// ========== STORAGE.JS - API Layer ==========
+
+const API_BASE = 'http://localhost:3000/api';
+const API_KEY = 'tr4ding-j0urn4l-s3cr3t-k3y-2024';
+
+const headers = {
+    'Content-Type': 'application/json',
+    'x-api-key': API_KEY
 };
 
-// ========== DEFAULT DATA ==========
-const DEFAULT_CATEGORIES = ['Stocks', 'Forex', 'Crypto', 'Indices', 'Commodities'];
-
-const DEFAULT_ACCOUNTS = ['Live Account', 'Demo Account'];
-
-const DEFAULT_SESSIONS = ['Asia', 'London', 'New York'];
-
-// ========== INITIALIZATION ==========
-function initStorage() {
-    // Initialize if empty
-    if (!localStorage.getItem(STORAGE_KEYS.TRADES)) {
-        localStorage.setItem(STORAGE_KEYS.TRADES, JSON.stringify([]));
-    }
-    if (!localStorage.getItem(STORAGE_KEYS.ACCOUNTS)) {
-        localStorage.setItem(STORAGE_KEYS.ACCOUNTS, JSON.stringify(DEFAULT_ACCOUNTS));
-    }
-    if (!localStorage.getItem(STORAGE_KEYS.SESSIONS)) {
-        localStorage.setItem(STORAGE_KEYS.SESSIONS, JSON.stringify(DEFAULT_SESSIONS));
-    }
-    if (!localStorage.getItem(STORAGE_KEYS.CATEGORIES)) {
-        localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(DEFAULT_CATEGORIES));
-    }
-    if (!localStorage.getItem(STORAGE_KEYS.THEME)) {
-        localStorage.setItem(STORAGE_KEYS.THEME, 'dark');
-    }
-}
-
 // ========== TRADES ==========
-function getTrades() {
-    return JSON.parse(localStorage.getItem(STORAGE_KEYS.TRADES)) || [];
-}
-
-function saveTrades(trades) {
-    localStorage.setItem(STORAGE_KEYS.TRADES, JSON.stringify(trades));
-}
-
-function addTrade(trade) {
-    const trades = getTrades();
-    trade.id = Date.now().toString(); // Unique ID based on timestamp
-    trade.createdAt = new Date().toISOString();
-    trades.push(trade);
-    saveTrades(trades);
-    return trade;
-}
-
-function updateTrade(tradeId, updatedTrade) {
-    const trades = getTrades();
-    const index = trades.findIndex(t => t.id === tradeId);
-    if (index !== -1) {
-        trades[index] = { ...trades[index], ...updatedTrade, id: tradeId };
-        saveTrades(trades);
-        return true;
+async function getTrades() {
+    try {
+        const res = await fetch(`${API_BASE}/trades`, { headers });
+        const data = await res.json();
+        return data.trades || [];
+    } catch (err) {
+        console.error('Get trades failed:', err);
+        return [];
     }
-    return false;
 }
 
-function deleteTrade(tradeId) {
-    let trades = getTrades();
-    trades = trades.filter(t => t.id !== tradeId);
-    saveTrades(trades);
+async function addTrade(trade) {
+    try {
+        const res = await fetch(`${API_BASE}/trades`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(trade)
+        });
+        const data = await res.json();
+        return data.trade;
+    } catch (err) {
+        console.error('Add trade failed:', err);
+        return null;
+    }
 }
 
-function getFilteredTrades(filters = {}) {
-    let trades = getTrades();
+async function updateTrade(tradeId, updatedTrade) {
+    try {
+        const res = await fetch(`${API_BASE}/trades/${tradeId}`, {
+            method: 'PUT',
+            headers,
+            body: JSON.stringify(updatedTrade)
+        });
+        const data = await res.json();
+        return !!data.trade;
+    } catch (err) {
+        console.error('Update trade failed:', err);
+        return false;
+    }
+}
+
+async function deleteTrade(tradeId) {
+    try {
+        await fetch(`${API_BASE}/trades/${tradeId}`, {
+            method: 'DELETE',
+            headers
+        });
+    } catch (err) {
+        console.error('Delete trade failed:', err);
+    }
+}
+
+async function getFilteredTrades(filters = {}) {
+    let trades = await getTrades();
     
-    // Filter by session
     if (filters.session && filters.session !== 'all') {
         trades = trades.filter(t => t.session === filters.session);
     }
-    
-    // Filter by instrument category
     if (filters.category && filters.category !== 'all') {
         trades = trades.filter(t => t.category === filters.category);
     }
-    
-    // Filter by account
     if (filters.account && filters.account !== 'all') {
         trades = trades.filter(t => t.account === filters.account);
     }
-    
-    // Filter by type (Buy/Sell)
     if (filters.type && filters.type !== 'all') {
         trades = trades.filter(t => t.type === filters.type);
     }
-    
-    // Filter by date range
     if (filters.dateFrom) {
         const fromDate = new Date(filters.dateFrom);
         trades = trades.filter(t => new Date(t.entryDate) >= fromDate);
@@ -100,134 +83,154 @@ function getFilteredTrades(filters = {}) {
     if (filters.dateTo) {
         const toDate = new Date(filters.dateTo);
         toDate.setHours(23, 59, 59);
-        trades = trades.filter(t => new Date(t.exitDate) <= toDate);
+        trades = trades.filter(t => new Date(t.entryDate) <= toDate);
     }
-    
-    // Filter by search query (instrument symbol)
     if (filters.search) {
         const query = filters.search.toLowerCase();
         trades = trades.filter(t => t.instrument.toLowerCase().includes(query));
     }
-    
     return trades;
 }
 
 // ========== ACCOUNTS ==========
-function getAccounts() {
-    return JSON.parse(localStorage.getItem(STORAGE_KEYS.ACCOUNTS)) || [];
-}
-
-function saveAccounts(accounts) {
-    localStorage.setItem(STORAGE_KEYS.ACCOUNTS, JSON.stringify(accounts));
-}
-
-function addAccount(accountName) {
-    const accounts = getAccounts();
-    if (accountName && !accounts.includes(accountName)) {
-        accounts.push(accountName);
-        saveAccounts(accounts);
+async function getAccounts() {
+    try {
+        const res = await fetch(`${API_BASE}/accounts`, { headers });
+        const data = await res.json();
+        return data.accounts || [];
+    } catch (err) {
+        console.error('Get accounts failed:', err);
+        return [];
     }
-    return accounts;
 }
 
-function removeAccount(accountName) {
-    let accounts = getAccounts();
-    accounts = accounts.filter(a => a !== accountName);
-    saveAccounts(accounts);
-    return accounts;
+async function addAccount(accountName) {
+    try {
+        const res = await fetch(`${API_BASE}/accounts`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({ name: accountName })
+        });
+        const data = await res.json();
+        return data.accounts || [];
+    } catch (err) {
+        console.error('Add account failed:', err);
+        return [];
+    }
+}
+
+async function removeAccount(accountName) {
+    try {
+        const res = await fetch(`${API_BASE}/accounts/${encodeURIComponent(accountName)}`, {
+            method: 'DELETE',
+            headers
+        });
+        const data = await res.json();
+        return data.accounts || [];
+    } catch (err) {
+        console.error('Remove account failed:', err);
+        return [];
+    }
 }
 
 // ========== SESSIONS ==========
-function getSessions() {
-    return JSON.parse(localStorage.getItem(STORAGE_KEYS.SESSIONS)) || [];
-}
-
-function saveSessions(sessions) {
-    localStorage.setItem(STORAGE_KEYS.SESSIONS, JSON.stringify(sessions));
-}
-
-function addSession(sessionName) {
-    const sessions = getSessions();
-    if (sessionName && !sessions.includes(sessionName)) {
-        sessions.push(sessionName);
-        saveSessions(sessions);
+async function getSessions() {
+    try {
+        const res = await fetch(`${API_BASE}/sessions`, { headers });
+        const data = await res.json();
+        return data.sessions || [];
+    } catch (err) {
+        console.error('Get sessions failed:', err);
+        return [];
     }
-    return sessions;
 }
 
-function removeSession(sessionName) {
-    let sessions = getSessions();
-    sessions = sessions.filter(s => s !== sessionName);
-    saveSessions(sessions);
-    return sessions;
+async function addSession(sessionName) {
+    try {
+        const res = await fetch(`${API_BASE}/sessions`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({ name: sessionName })
+        });
+        const data = await res.json();
+        return data.sessions || [];
+    } catch (err) {
+        console.error('Add session failed:', err);
+        return [];
+    }
 }
 
-// ========== CATEGORIES ==========
+async function removeSession(sessionName) {
+    try {
+        const res = await fetch(`${API_BASE}/sessions/${encodeURIComponent(sessionName)}`, {
+            method: 'DELETE',
+            headers
+        });
+        const data = await res.json();
+        return data.sessions || [];
+    } catch (err) {
+        console.error('Remove session failed:', err);
+        return [];
+    }
+}
+
+// ========== CATEGORIES (local only) ==========
 function getCategories() {
-    return JSON.parse(localStorage.getItem(STORAGE_KEYS.CATEGORIES)) || [];
+    return ['Stocks', 'Forex', 'Crypto', 'Indices', 'Commodities'];
 }
 
-function saveCategories(categories) {
-    localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(categories));
-}
+function addCategory() { return []; }
+function removeCategory() { return []; }
 
-function addCategory(categoryName) {
-    const categories = getCategories();
-    if (categoryName && !categories.includes(categoryName)) {
-        categories.push(categoryName);
-        saveCategories(categories);
-    }
-    return categories;
-}
-
-function removeCategory(categoryName) {
-    let categories = getCategories();
-    categories = categories.filter(c => c !== categoryName);
-    saveCategories(categories);
-    return categories;
-}
-
-// ========== THEME ==========
+// ========== THEME (local only) ==========
 function getTheme() {
-    return localStorage.getItem(STORAGE_KEYS.THEME) || 'dark';
+    return localStorage.getItem('trading_journal_theme') || 'dark';
 }
 
 function setTheme(theme) {
-    localStorage.setItem(STORAGE_KEYS.THEME, theme);
+    localStorage.setItem('trading_journal_theme', theme);
 }
 
 // ========== DATA EXPORT / IMPORT ==========
-function exportData() {
-    const data = {
-        trades: getTrades(),
-        accounts: getAccounts(),
-        sessions: getSessions(),
-        categories: getCategories(),
-        exportedAt: new Date().toISOString()
-    };
-    return JSON.stringify(data, null, 2);
+async function exportData() {
+    const trades = await getTrades();
+    const accounts = await getAccounts();
+    const sessions = await getSessions();
+    return JSON.stringify({ trades, accounts, sessions, exportedAt: new Date().toISOString() }, null, 2);
 }
 
-function importData(jsonString) {
+async function importData(jsonString) {
     try {
         const data = JSON.parse(jsonString);
-        
-        if (data.trades) saveTrades(data.trades);
-        if (data.accounts) saveAccounts(data.accounts);
-        if (data.sessions) saveSessions(data.sessions);
-        if (data.categories) saveCategories(data.categories);
-        
+        if (data.trades) {
+            for (const trade of data.trades) {
+                await addTrade(trade);
+            }
+        }
+        if (data.accounts) {
+            for (const acc of data.accounts) {
+                await addAccount(acc);
+            }
+        }
+        if (data.sessions) {
+            for (const sess of data.sessions) {
+                await addSession(sess);
+            }
+        }
         return true;
-    } catch (error) {
-        console.error('Import failed:', error);
+    } catch (err) {
+        console.error('Import failed:', err);
         return false;
     }
 }
 
-function clearAllData() {
-    localStorage.removeItem(STORAGE_KEYS.TRADES);
-    localStorage.removeItem(STORAGE_KEYS.ACCOUNTS);
-    localStorage.removeItem(STORAGE_KEYS.SESSIONS);
-    localStorage.removeItem(STORAGE_KEYS.CATEGORIES);
-    initStorage();
+async function clearAllData() {
+    const trades = await getTrades();
+    for (const trade of trades) {
+        await deleteTrade(trade.id);
+    }
+}
+
+function initStorage() {
+    // No localStorage init needed
 }
