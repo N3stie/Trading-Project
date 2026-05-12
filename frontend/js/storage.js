@@ -1,68 +1,43 @@
-// ========== STORAGE.JS - API Layer ==========
-
-const API_BASE = 'http://localhost:3000/api';
-const API_KEY = 'tr4ding-j0urn4l-s3cr3t-k3y-2024';
-
-const headers = {
-    'Content-Type': 'application/json',
-    'x-api-key': API_KEY
-};
+// ========== STORAGE.JS - LocalStorage Layer ==========
 
 // ========== TRADES ==========
-async function getTrades() {
-    try {
-        const res = await fetch(`${API_BASE}/trades`, { headers });
-        const data = await res.json();
-        return data.trades || [];
-    } catch (err) {
-        console.error('Get trades failed:', err);
-        return [];
-    }
+function getTrades() {
+    const data = localStorage.getItem('trading_journal_trades');
+    return data ? JSON.parse(data) : [];
 }
 
-async function addTrade(trade) {
-    try {
-        const res = await fetch(`${API_BASE}/trades`, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify(trade)
-        });
-        const data = await res.json();
-        return data.trade;
-    } catch (err) {
-        console.error('Add trade failed:', err);
-        return null;
-    }
+function saveTrades(trades) {
+    localStorage.setItem('trading_journal_trades', JSON.stringify(trades));
 }
 
-async function updateTrade(tradeId, updatedTrade) {
-    try {
-        const res = await fetch(`${API_BASE}/trades/${tradeId}`, {
-            method: 'PUT',
-            headers,
-            body: JSON.stringify(updatedTrade)
-        });
-        const data = await res.json();
-        return !!data.trade;
-    } catch (err) {
-        console.error('Update trade failed:', err);
-        return false;
-    }
+function addTrade(trade) {
+    const trades = getTrades();
+    trade.id = Date.now().toString();
+    trade.createdAt = new Date().toISOString();
+    trades.push(trade);
+    saveTrades(trades);
+    return trade;
 }
 
-async function deleteTrade(tradeId) {
-    try {
-        await fetch(`${API_BASE}/trades/${tradeId}`, {
-            method: 'DELETE',
-            headers
-        });
-    } catch (err) {
-        console.error('Delete trade failed:', err);
+function updateTrade(tradeId, updatedTrade) {
+    const trades = getTrades();
+    const index = trades.findIndex(t => t.id === tradeId);
+    if (index !== -1) {
+        trades[index] = { ...trades[index], ...updatedTrade, id: tradeId };
+        saveTrades(trades);
+        return true;
     }
+    return false;
 }
 
-async function getFilteredTrades(filters = {}) {
-    let trades = await getTrades();
+function deleteTrade(tradeId) {
+    let trades = getTrades();
+    trades = trades.filter(t => t.id !== tradeId);
+    saveTrades(trades);
+}
+
+function getFilteredTrades(filters = {}) {
+    let trades = getTrades();
     
     if (filters.session && filters.session !== 'all') {
         trades = trades.filter(t => t.session === filters.session);
@@ -93,88 +68,56 @@ async function getFilteredTrades(filters = {}) {
 }
 
 // ========== ACCOUNTS ==========
-async function getAccounts() {
-    try {
-        const res = await fetch(`${API_BASE}/accounts`, { headers });
-        const data = await res.json();
-        return data.accounts || [];
-    } catch (err) {
-        console.error('Get accounts failed:', err);
-        return [];
-    }
+function getAccounts() {
+    const data = localStorage.getItem('trading_journal_accounts');
+    if (data) return JSON.parse(data);
+    const defaults = ['Live Account', 'Demo Account'];
+    localStorage.setItem('trading_journal_accounts', JSON.stringify(defaults));
+    return defaults;
 }
 
-async function addAccount(accountName) {
-    try {
-        const res = await fetch(`${API_BASE}/accounts`, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify({ name: accountName })
-        });
-        const data = await res.json();
-        return data.accounts || [];
-    } catch (err) {
-        console.error('Add account failed:', err);
-        return [];
+function addAccount(accountName) {
+    const accounts = getAccounts();
+    if (accountName && !accounts.includes(accountName)) {
+        accounts.push(accountName);
+        localStorage.setItem('trading_journal_accounts', JSON.stringify(accounts));
     }
+    return accounts;
 }
 
-async function removeAccount(accountName) {
-    try {
-        const res = await fetch(`${API_BASE}/accounts/${encodeURIComponent(accountName)}`, {
-            method: 'DELETE',
-            headers
-        });
-        const data = await res.json();
-        return data.accounts || [];
-    } catch (err) {
-        console.error('Remove account failed:', err);
-        return [];
-    }
+function removeAccount(accountName) {
+    let accounts = getAccounts();
+    accounts = accounts.filter(a => a !== accountName);
+    localStorage.setItem('trading_journal_accounts', JSON.stringify(accounts));
+    return accounts;
 }
 
 // ========== SESSIONS ==========
-async function getSessions() {
-    try {
-        const res = await fetch(`${API_BASE}/sessions`, { headers });
-        const data = await res.json();
-        return data.sessions || [];
-    } catch (err) {
-        console.error('Get sessions failed:', err);
-        return [];
-    }
+function getSessions() {
+    const data = localStorage.getItem('trading_journal_sessions');
+    if (data) return JSON.parse(data);
+    const defaults = ['Asia', 'London', 'New York'];
+    localStorage.setItem('trading_journal_sessions', JSON.stringify(defaults));
+    return defaults;
 }
 
-async function addSession(sessionName) {
-    try {
-        const res = await fetch(`${API_BASE}/sessions`, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify({ name: sessionName })
-        });
-        const data = await res.json();
-        return data.sessions || [];
-    } catch (err) {
-        console.error('Add session failed:', err);
-        return [];
+function addSession(sessionName) {
+    const sessions = getSessions();
+    if (sessionName && !sessions.includes(sessionName)) {
+        sessions.push(sessionName);
+        localStorage.setItem('trading_journal_sessions', JSON.stringify(sessions));
     }
+    return sessions;
 }
 
-async function removeSession(sessionName) {
-    try {
-        const res = await fetch(`${API_BASE}/sessions/${encodeURIComponent(sessionName)}`, {
-            method: 'DELETE',
-            headers
-        });
-        const data = await res.json();
-        return data.sessions || [];
-    } catch (err) {
-        console.error('Remove session failed:', err);
-        return [];
-    }
+function removeSession(sessionName) {
+    let sessions = getSessions();
+    sessions = sessions.filter(s => s !== sessionName);
+    localStorage.setItem('trading_journal_sessions', JSON.stringify(sessions));
+    return sessions;
 }
 
-// ========== CATEGORIES (local only) ==========
+// ========== CATEGORIES ==========
 function getCategories() {
     return ['Stocks', 'Forex', 'Crypto', 'Indices', 'Commodities'];
 }
@@ -182,7 +125,7 @@ function getCategories() {
 function addCategory() { return []; }
 function removeCategory() { return []; }
 
-// ========== THEME (local only) ==========
+// ========== THEME ==========
 function getTheme() {
     return localStorage.getItem('trading_journal_theme') || 'dark';
 }
@@ -192,31 +135,22 @@ function setTheme(theme) {
 }
 
 // ========== DATA EXPORT / IMPORT ==========
-async function exportData() {
-    const trades = await getTrades();
-    const accounts = await getAccounts();
-    const sessions = await getSessions();
-    return JSON.stringify({ trades, accounts, sessions, exportedAt: new Date().toISOString() }, null, 2);
+function exportData() {
+    const data = {
+        trades: getTrades(),
+        accounts: getAccounts(),
+        sessions: getSessions(),
+        exportedAt: new Date().toISOString()
+    };
+    return JSON.stringify(data, null, 2);
 }
 
-async function importData(jsonString) {
+function importData(jsonString) {
     try {
         const data = JSON.parse(jsonString);
-        if (data.trades) {
-            for (const trade of data.trades) {
-                await addTrade(trade);
-            }
-        }
-        if (data.accounts) {
-            for (const acc of data.accounts) {
-                await addAccount(acc);
-            }
-        }
-        if (data.sessions) {
-            for (const sess of data.sessions) {
-                await addSession(sess);
-            }
-        }
+        if (data.trades) saveTrades(data.trades);
+        if (data.accounts) localStorage.setItem('trading_journal_accounts', JSON.stringify(data.accounts));
+        if (data.sessions) localStorage.setItem('trading_journal_sessions', JSON.stringify(data.sessions));
         return true;
     } catch (err) {
         console.error('Import failed:', err);
@@ -224,13 +158,17 @@ async function importData(jsonString) {
     }
 }
 
-async function clearAllData() {
-    const trades = await getTrades();
-    for (const trade of trades) {
-        await deleteTrade(trade.id);
-    }
+function clearAllData() {
+    localStorage.removeItem('trading_journal_trades');
+    localStorage.removeItem('trading_journal_accounts');
+    localStorage.removeItem('trading_journal_sessions');
+    // Re-initialize defaults
+    getAccounts();
+    getSessions();
 }
 
 function initStorage() {
-    // No localStorage init needed
+    // Initialize defaults
+    getAccounts();
+    getSessions();
 }

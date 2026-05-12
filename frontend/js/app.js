@@ -3,7 +3,7 @@
 let currentPage = 'dashboard';
 
 // ========== INITIALIZATION ==========
-document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener('DOMContentLoaded', () => {
     initStorage();
     applyTheme();
     initNavigation();
@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     initAnalytics();
     initSettings();
     
-    await populateFilterDropdowns();
+    populateFilterDropdowns();
     navigateTo('dashboard');
 });
 
@@ -26,7 +26,7 @@ function initNavigation() {
     });
 }
 
-async function navigateTo(page) {
+function navigateTo(page) {
     document.querySelectorAll('.nav-btn').forEach(btn => {
         btn.classList.remove('active');
         if (btn.dataset.page === page) btn.classList.add('active');
@@ -39,13 +39,13 @@ async function navigateTo(page) {
         targetPage.classList.add('active');
         currentPage = page;
         
-        await populateFilterDropdowns();
+        populateFilterDropdowns();
         
         if (page === 'dashboard') refreshDashboard();
         if (page === 'trades') refreshTrades();
         if (page === 'addTrade') refreshAddTradeForm();
         if (page === 'analytics') refreshAnalytics();
-        if (page === 'settings') await refreshSettings();
+        if (page === 'settings') refreshSettings();
     }
 }
 
@@ -89,9 +89,9 @@ function formatDateShort(dateString) {
 }
 
 // ========== POPULATE FILTERS ==========
-async function populateFilterDropdowns() {
-    const accounts = await getAccounts();
-    const sessions = await getSessions();
+function populateFilterDropdowns() {
+    const accounts = getAccounts();
+    const sessions = getSessions();
     const categories = getCategories();
     
     const accountFilters = ['dashboardAccountFilter', 'tradesAccountFilter', 'analyticsAccountFilter'];

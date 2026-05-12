@@ -10,9 +10,9 @@ function initTrades() {
     document.getElementById('tradesSearch').addEventListener('input', refreshTrades);
 }
 
-async function refreshTrades() {
+function refreshTrades() {
     const filters = getTradesFilters();
-    const trades = await getFilteredTrades(filters);
+    const trades = getFilteredTrades(filters);
     renderTradesTable(trades);
 }
 
@@ -81,16 +81,16 @@ function createTradeRow(trade) {
     `;
 }
 
-async function deleteTradeAndRefresh(tradeId) {
+function deleteTradeAndRefresh(tradeId) {
     if (confirm('Are you sure you want to delete this trade?')) {
-        await deleteTrade(tradeId);
-        await refreshTrades();
+        deleteTrade(tradeId);
+        refreshTrades();
         if (currentPage === 'dashboard') refreshDashboard();
     }
 }
 
-async function editTrade(tradeId) {
-    const trades = await getTrades();
+function editTrade(tradeId) {
+    const trades = getTrades();
     const trade = trades.find(t => t.id === tradeId);
     if (!trade) return;
     
@@ -120,17 +120,16 @@ async function editTrade(tradeId) {
 
 function viewScreenshot(e, tradeId) {
     e.preventDefault();
-    getTrades().then(trades => {
-        const trade = trades.find(t => t.id === tradeId);
-        if (trade && trade.screenshot && trade.screenshot.startsWith('data:')) {
-            const win = window.open('', '_blank');
-            win.document.write(`
-                <html><head><title>Screenshot - ${trade.instrument || 'Trade'}</title>
-                <style>body{margin:0;display:flex;justify-content:center;background:#000;min-height:100vh}img{max-width:100%;max-height:100vh;object-fit:contain}</style>
-                </head><body><img src="${trade.screenshot}"></body></html>
-            `);
-        }
-    });
+    const trades = getTrades();
+    const trade = trades.find(t => t.id === tradeId);
+    if (trade && trade.screenshot && trade.screenshot.startsWith('data:')) {
+        const win = window.open('', '_blank');
+        win.document.write(`
+            <html><head><title>Screenshot - ${trade.instrument || 'Trade'}</title>
+            <style>body{margin:0;display:flex;justify-content:center;background:#000;min-height:100vh}img{max-width:100%;max-height:100vh;object-fit:contain}</style>
+            </head><body><img src="${trade.screenshot}"></body></html>
+        `);
+    }
 }
 
 function truncateText(text, maxLength) {

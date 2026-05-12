@@ -12,9 +12,9 @@ function initDashboard() {
 }
 
 // ========== REFRESH DASHBOARD ==========
-async function refreshDashboard() {
+function refreshDashboard() {
     const filters = getDashboardFilters();
-    const trades = await getFilteredTrades(filters);
+    const trades = getFilteredTrades(filters);
     
     updateSummaryCards(trades);
     updateWinLossCards(trades);

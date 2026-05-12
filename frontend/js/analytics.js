@@ -15,11 +15,11 @@ function initAnalytics() {
 }
 
 // ========== REFRESH ANALYTICS ==========
-async function refreshAnalytics() {
+function refreshAnalytics() {
     const filters = getAnalyticsFilters();
-    const trades = await getFilteredTrades(filters);
-    const accounts = await getAccounts();
-    const sessions = await getSessions();
+    const trades = getFilteredTrades(filters);
+    const accounts = getAccounts();
+    const sessions = getSessions();
     
     updateWinRateBySession(trades, sessions);
     updatePnLByCategory(trades);
