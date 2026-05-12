@@ -20,11 +20,11 @@ function initSettings() {
     });
 }
 
-async function refreshSettings() {
+function refreshSettings() {
     const theme = getTheme();
     document.getElementById('themeToggle').checked = theme === 'dark';
-    await renderAccountsList();
-    await renderSessionsList();
+    renderAccountsList();
+    renderSessionsList();
     renderCategoriesList();
 }
 
@@ -42,53 +42,53 @@ function handleThemeToggle(e) {
     }, 100);
 }
 
-async function handleAddAccount() {
+function handleAddAccount() {
     const input = document.getElementById('newAccount');
     const name = input.value.trim();
     if (!name) return showNotification('Enter an account name', 'error');
-    await addAccount(name);
+    addAccount(name);
     input.value = '';
-    await renderAccountsList();
+    renderAccountsList();
     populateFilterDropdowns();
     showNotification(`"${name}" added`, 'success');
 }
 
-async function handleRemoveAccount(name) {
-    await removeAccount(name);
-    await renderAccountsList();
+function handleRemoveAccount(name) {
+    removeAccount(name);
+    renderAccountsList();
     populateFilterDropdowns();
     showNotification(`"${name}" removed`, 'success');
 }
 
-async function renderAccountsList() {
+function renderAccountsList() {
     const list = document.getElementById('accountsList');
-    const accounts = await getAccounts();
+    const accounts = getAccounts();
     list.innerHTML = accounts.length === 0 
         ? '<li class="empty-hint">No accounts</li>'
         : accounts.map(a => `<li><span>${a}</span><button class="btn-delete" onclick="handleRemoveAccount('${a.replace(/'/g, "\\'")}')">×</button></li>`).join('');
 }
 
-async function handleAddSession() {
+function handleAddSession() {
     const input = document.getElementById('newSession');
     const name = input.value.trim();
     if (!name) return showNotification('Enter a session name', 'error');
-    await addSession(name);
+    addSession(name);
     input.value = '';
-    await renderSessionsList();
+    renderSessionsList();
     populateFilterDropdowns();
     showNotification(`"${name}" added`, 'success');
 }
 
-async function handleRemoveSession(name) {
-    await removeSession(name);
-    await renderSessionsList();
+function handleRemoveSession(name) {
+    removeSession(name);
+    renderSessionsList();
     populateFilterDropdowns();
     showNotification(`"${name}" removed`, 'success');
 }
 
-async function renderSessionsList() {
+function renderSessionsList() {
     const list = document.getElementById('sessionsList');
-    const sessions = await getSessions();
+    const sessions = getSessions();
     list.innerHTML = sessions.length === 0
         ? '<li class="empty-hint">No sessions</li>'
         : sessions.map(s => `<li><span>${s}</span><button class="btn-delete" onclick="handleRemoveSession('${s.replace(/'/g, "\\'")}')">×</button></li>`).join('');
@@ -120,8 +120,8 @@ function renderCategoriesList() {
         : categories.map(c => `<li><span>${c}</span><button class="btn-delete" onclick="handleRemoveCategory('${c.replace(/'/g, "\\'")}')">×</button></li>`).join('');
 }
 
-async function handleExportData() {
-    const data = await exportData();
+function handleExportData() {
+    const data = exportData();
     const blob = new Blob([data], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -142,11 +142,11 @@ function handleImportData() {
         const file = e.target.files[0];
         if (!file) return;
         const reader = new FileReader();
-        reader.onload = async function(event) {
-            if (await importData(event.target.result)) {
+        reader.onload = function(event) {
+            if (importData(event.target.result)) {
                 showNotification('Data imported', 'success');
                 populateFilterDropdowns();
-                await refreshSettings();
+                refreshSettings();
                 navigateTo('dashboard');
             } else {
                 showNotification('Invalid file', 'error');
@@ -157,12 +157,12 @@ function handleImportData() {
     input.click();
 }
 
-async function handleClearData() {
+function handleClearData() {
     if (confirm('Delete ALL data? This cannot be undone.')) {
         if (confirm('Final warning: permanently delete everything?')) {
-            await clearAllData();
+            clearAllData();
             populateFilterDropdowns();
-            await refreshSettings();
+            refreshSettings();
             refreshDashboard();
             refreshTrades();
             showNotification('All data cleared', 'success');
